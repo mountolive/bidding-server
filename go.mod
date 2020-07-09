@@ -2,4 +2,7 @@ module github.com/mountolive/bidding-server
 
 go 1.14
 
-require github.com/go-redis/redis/v8 v8.0.0-beta.6
+require (
+	github.com/go-redis/redis/v8 v8.0.0-beta.6
+	github.com/stretchr/testify v1.6.1
+)

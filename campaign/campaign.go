@@ -19,17 +19,16 @@ type Campaign struct {
 }
 
 // Struct that represents a positionSetup element of a campaign
-// Setting float64 is admittedly an overkill for memory
-// but makes it easier for code reuse
 type PositionSetup struct {
 	Position int `json:"position"`
 	Distance int `json:"distance"`
 }
 
 // Function that deals with the retrieval and parsing of campaigns
+// Passing the retrieval function so that it can be mocked out
 // returns a slice of Campaign
-func RetrieveCampaigns() ([]Campaign, error) {
-	raw, err := getRawCampaigns(RedisUrl, HashName)
+func RetrieveCampaigns(getRaw func(url, hash string) (map[string]string, error)) ([]Campaign, error) {
+	raw, err := getRaw(RedisUrl, HashName)
 	// Bubbling the error up
 	if err != nil {
 		return nil, err
@@ -53,14 +52,14 @@ func getRawCampaigns(redisUrl, hashName string) (map[string]string, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	rdb, err := NewRedisClient(ctx, redisUrl)
-	// We will close connection because we won't be needing it again
-	// (Although, in any case we're cancelling the context before)
-	defer rdb.Close()
 	// It was an error when connecting to redis
 	if err != nil {
 		fmt.Println("An error occurred when connecting to redis")
 		return nil, err
 	}
+	// We will close connection because we won't be needing it again
+	// (Although, in any case we're cancelling the context before)
+	defer rdb.Close()
 	raw, err := rdb.HGetAll(ctx, hashName).Result()
 	// Error finding hash
 	if err != nil {
