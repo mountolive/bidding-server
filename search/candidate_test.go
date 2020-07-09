@@ -64,6 +64,7 @@ func (m mockSearcherFalse) searchPositions(ctx context.Context, id int, data []c
 // Just base tests
 // searcher can be mocked by creating a stub searcher
 func TestCandidate(tester *testing.T) {
+	candSrchr := candidateSearcher{}
 	trueSearch := mockSearcherTrue{}
 	falseSearch := mockSearcherFalse{}
 	realSearcher := searcher{}
@@ -174,7 +175,7 @@ func TestCandidate(tester *testing.T) {
 		}
 		for _, tc := range testCases {
 			test.Run(tc.name, func(t *testing.T) {
-				res, err := Candidate(tc.compare, tc.data, tc.util)
+				res, err := candSrchr.Candidate(tc.compare, tc.data, tc.util)
 				noErr := err != nil
 				assert.True(t, tc.expVal == res, "Got result: %v, Exp: %v", res, tc.expVal)
 				assert.True(t, tc.expErr == noErr, "Got err: %v, Exp: %v --- %v", noErr, tc.expErr, err)

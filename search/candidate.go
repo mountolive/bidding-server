@@ -18,11 +18,17 @@ type search interface {
 // Implementation holder
 type searcher struct{}
 
+type searchCandidate interface {
+	Candidate(i int, data interface{}, srchr search) (bool, error)
+}
+
+type candidateSearcher struct{}
+
 // Checks whether the publisher can bid on this campaign
 // Depending on the type of data, it would search for positions or
 // permitted publishers. If the data is not supported,
 // err will be not nil
-func Candidate(pubValue int, data interface{}, searcher search) (bool, error) {
+func (s candidateSearcher) Candidate(pubValue int, data interface{}, searcher search) (bool, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	// Holder in case data is about publishers

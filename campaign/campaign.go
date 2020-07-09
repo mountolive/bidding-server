@@ -11,8 +11,8 @@ import (
 // Publishers will get parsed as a float64 array
 // id is also
 type Campaign struct {
-	id         int             `json:"id"`
-	name       string          `json:"name"`
+	Id         int             `json:"id"`
+	Name       string          `json:"name"`
 	Positions  []PositionSetup `json:"positions"`
 	Publishers []int           `json:"publishers"`
 	Cpm        float64         `json:"cpm"`
