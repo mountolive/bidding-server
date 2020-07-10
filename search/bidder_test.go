@@ -1,7 +1,6 @@
 package search
 
 import (
-	"context"
 	"github.com/mountolive/bidding-server/campaign"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -9,7 +8,6 @@ import (
 
 type bidderCase struct {
 	name      string
-	searcher  Search
 	candidate SearchCandidate
 	pubId     int
 	pos       int
@@ -19,7 +17,7 @@ type bidderCase struct {
 
 type mockSearchCandidate struct{}
 
-func (m mockSearchCandidate) Candidate(ctx context.Context, p int, data interface{}, srchr Search) (bool, error) {
+func (m mockSearchCandidate) Candidate(p int, data interface{}) (bool, error) {
 	return true, nil
 }
 
@@ -28,7 +26,6 @@ func TestBidder(tester *testing.T) {
 	pubId := 1
 	pos := 300
 	bidder := Bidder{}
-	baseSearcher := searcher{}
 	candSearcherMock := mockSearchCandidate{}
 	properSearcher := candidateSearcher{}
 	totalCampaigns, _ := campaign.LoadDefaultCampaigns()
@@ -70,7 +67,6 @@ func TestBidder(tester *testing.T) {
 		testCases := []bidderCase{
 			{
 				"Empty campaigns",
-				baseSearcher,
 				candSearcherMock,
 				pubId,
 				pos,
@@ -80,7 +76,6 @@ func TestBidder(tester *testing.T) {
 			},
 			{
 				"Not matching any campaign",
-				baseSearcher,
 				properSearcher,
 				33333333,
 				4444444,
@@ -90,7 +85,6 @@ func TestBidder(tester *testing.T) {
 			},
 			{
 				"Matching from empty conditions",
-				baseSearcher,
 				properSearcher,
 				pubId,
 				19,
@@ -100,7 +94,6 @@ func TestBidder(tester *testing.T) {
 			},
 			{
 				"Proper matching conditions",
-				baseSearcher,
 				properSearcher,
 				pubId,
 				36,
@@ -110,7 +103,6 @@ func TestBidder(tester *testing.T) {
 			},
 			{
 				"Proper matching conditions - all campaigns",
-				baseSearcher,
 				properSearcher,
 				500,
 				8153,
@@ -121,7 +113,7 @@ func TestBidder(tester *testing.T) {
 		}
 		for _, tc := range testCases {
 			test.Run(tc.name, func(t *testing.T) {
-				res := bidder.FindBestBid(context.TODO(), tc.pos, tc.pubId, tc.data, tc.candidate, tc.searcher)
+				res := bidder.FindBestBid(tc.pos, tc.pubId, tc.data, tc.candidate)
 				maxPriceSet := res > 0
 				assert.True(t, maxPriceSet == tc.expVal, "Got result: %v, Exp: %v", maxPriceSet, tc.expVal)
 				if maxPriceSet {

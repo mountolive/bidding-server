@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -62,8 +61,6 @@ func processRequest(bidder search.Bidder, pos, pubId string, cmpgs []campaign.Ca
 	if err != nil {
 		return 0
 	}
-	// One context per request
-	ctx := context.Background()
-	maxPrice := bidder.BestBid(ctx, position, publisherId, cmpgs)
+	maxPrice := bidder.BestBid(position, publisherId, cmpgs)
 	return maxPrice
 }
