@@ -122,23 +122,26 @@ func (s searcher) searchPublishers(ctx context.Context, pubId int, data []int) <
 // to the publisher's position, in the form of a boolean chan (linear)
 func (s searcher) searchPositions(ctx context.Context, position int, data []campaign.PositionSetup) <-chan bool {
 	found := make(chan bool, 1)
-	cmp := func(pos int, arrPos campaign.PositionSetup) bool {
-		// shortening the names
-		dist := arrPos.Distance
-		currPos := arrPos.Position
-		return currPos-dist <= pos && pos <= currPos+dist
-	}
 	go func() {
 		defer close(found)
 		for _, i := range data {
 			select {
 			case <-ctx.Done():
 				return
-			case found <- cmp(position, i):
+			case found <- positionComparator(position, i):
 			}
 		}
 	}()
 	return found
+}
+
+// UTIL FUNCTIONS
+
+func positionComparator(pos int, arrPos campaign.PositionSetup) bool {
+	// shortening the names
+	dist := arrPos.Distance
+	currPos := arrPos.Position
+	return currPos-dist <= pos && pos <= currPos+dist
 }
 
 // Converts a varags of chans into a single one
