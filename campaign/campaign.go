@@ -24,6 +24,12 @@ type PositionSetup struct {
 	Distance int `json:"distance"`
 }
 
+// Wrapper function that loads the campaigns from
+// default parameters of the ser
+func LoadDefaultCampaigns() ([]Campaign, error) {
+	return RetrieveCampaigns(getRawCampaigns)
+}
+
 // Function that deals with the retrieval and parsing of campaigns
 // Passing the retrieval function so that it can be mocked out
 // returns a slice of Campaign
@@ -35,8 +41,8 @@ func RetrieveCampaigns(getRaw func(url, hash string) (map[string]string, error))
 	}
 	// Unmarshaling one by one and appending to slice
 	campaigns := make([]Campaign, 0)
-	placeholder := &Campaign{}
 	for id, hash := range raw {
+		placeholder := &Campaign{}
 		err := json.Unmarshal([]byte(hash), placeholder)
 		campaigns = append(campaigns, *placeholder)
 		if err != nil {

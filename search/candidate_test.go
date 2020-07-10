@@ -9,7 +9,7 @@ import (
 
 type candidateCase struct {
 	name    string
-	util    search
+	util    Search
 	compare int
 	data    interface{}
 	expVal  bool
@@ -175,7 +175,7 @@ func TestCandidate(tester *testing.T) {
 		}
 		for _, tc := range testCases {
 			test.Run(tc.name, func(t *testing.T) {
-				res, err := candSrchr.Candidate(tc.compare, tc.data, tc.util)
+				res, err := candSrchr.Candidate(context.TODO(), tc.compare, tc.data, tc.util)
 				noErr := err != nil
 				assert.True(t, tc.expVal == res, "Got result: %v, Exp: %v", res, tc.expVal)
 				assert.True(t, tc.expErr == noErr, "Got err: %v, Exp: %v --- %v", noErr, tc.expErr, err)

@@ -10,7 +10,7 @@ import (
 )
 
 // Interface that defines our search methods
-type search interface {
+type Search interface {
 	searchPublishers(ctx context.Context, pubId int, data []int) <-chan bool
 	searchPositions(ctx context.Context, position int, data []campaign.PositionSetup) <-chan bool
 }
@@ -18,8 +18,8 @@ type search interface {
 // Implementation holder
 type searcher struct{}
 
-type searchCandidate interface {
-	Candidate(i int, data interface{}, srchr search) (bool, error)
+type SearchCandidate interface {
+	Candidate(ctx context.Context, i int, data interface{}, srchr Search) (bool, error)
 }
 
 type candidateSearcher struct{}
@@ -28,9 +28,9 @@ type candidateSearcher struct{}
 // Depending on the type of data, it would search for positions or
 // permitted publishers. If the data is not supported,
 // err will be not nil
-func (s candidateSearcher) Candidate(pubValue int, data interface{}, searcher search) (bool, error) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+func (s candidateSearcher) Candidate(ctx context.Context, pubValue int, data interface{}, searcher Search) (bool, error) {
+	//ctx, cancel := context.WithCancel(ctx)
+	//defer cancel()
 	// Holder in case data is about publishers
 	var publishers []int
 	// Holder in case data is about position
@@ -104,7 +104,7 @@ func (s candidateSearcher) Candidate(pubValue int, data interface{}, searcher se
 // Returns the comparison of each element in the array
 // to the publisher's id, in the form of a chan (linear execution)
 func (s searcher) searchPublishers(ctx context.Context, pubId int, data []int) <-chan bool {
-	found := make(chan bool)
+	found := make(chan bool, 1)
 	go func() {
 		defer close(found)
 		for _, i := range data {
@@ -121,7 +121,7 @@ func (s searcher) searchPublishers(ctx context.Context, pubId int, data []int) <
 // Returns the comparison of each element in the array
 // to the publisher's position, in the form of a boolean chan (linear)
 func (s searcher) searchPositions(ctx context.Context, position int, data []campaign.PositionSetup) <-chan bool {
-	found := make(chan bool)
+	found := make(chan bool, 1)
 	cmp := func(pos int, arrPos campaign.PositionSetup) bool {
 		// shortening the names
 		dist := arrPos.Distance

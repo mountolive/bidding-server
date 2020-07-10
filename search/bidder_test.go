@@ -1,6 +1,7 @@
 package search
 
 import (
+	"context"
 	"github.com/mountolive/bidding-server/campaign"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -8,8 +9,8 @@ import (
 
 type bidderCase struct {
 	name      string
-	searcher  search
-	candidate searchCandidate
+	searcher  Search
+	candidate SearchCandidate
 	pubId     int
 	pos       int
 	data      []campaign.Campaign
@@ -18,7 +19,7 @@ type bidderCase struct {
 
 type mockSearchCandidate struct{}
 
-func (m mockSearchCandidate) Candidate(p int, data interface{}, srchr search) (bool, error) {
+func (m mockSearchCandidate) Candidate(ctx context.Context, p int, data interface{}, srchr Search) (bool, error) {
 	return true, nil
 }
 
@@ -30,6 +31,7 @@ func TestBidder(tester *testing.T) {
 	baseSearcher := searcher{}
 	candSearcherMock := mockSearchCandidate{}
 	properSearcher := candidateSearcher{}
+	totalCampaigns, _ := campaign.LoadDefaultCampaigns()
 	exampleCampaigns := []campaign.Campaign{
 		{
 			1,
@@ -43,7 +45,7 @@ func TestBidder(tester *testing.T) {
 			"test2",
 			[]campaign.PositionSetup{{20, 2}, {45, 10}},
 			[]int{1, 7, 8, 5, 9},
-			3.34,
+			4.21,
 		},
 	}
 	exampleCampaignsEmpty := []campaign.Campaign{
@@ -59,7 +61,7 @@ func TestBidder(tester *testing.T) {
 			"test2",
 			[]campaign.PositionSetup{{20, 2}, {45, 10}},
 			make([]int, 0),
-			3.34,
+			4.21,
 		},
 	}
 
@@ -106,15 +108,25 @@ func TestBidder(tester *testing.T) {
 				// price > 0
 				true,
 			},
+			{
+				"Proper matching conditions - all campaigns",
+				baseSearcher,
+				properSearcher,
+				500,
+				8153,
+				totalCampaigns,
+				// price > 0
+				true,
+			},
 		}
 		for _, tc := range testCases {
 			test.Run(tc.name, func(t *testing.T) {
-				res := bidder.FindBestBid(tc.pos, tc.pubId, tc.data, tc.candidate, tc.searcher)
+				res := bidder.FindBestBid(context.TODO(), tc.pos, tc.pubId, tc.data, tc.candidate, tc.searcher)
 				maxPriceSet := res > 0
 				assert.True(t, maxPriceSet == tc.expVal, "Got result: %v, Exp: %v", maxPriceSet, tc.expVal)
 				if maxPriceSet {
 					// MaxPrice set along the tests
-					assert.True(t, res == 3.34, "Got result: %v, Exp: %v", res, 3.34)
+					assert.True(t, res == 4.21, "Got result: %v, Exp: %v", res, 3.34)
 				}
 			})
 		}
