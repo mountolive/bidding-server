@@ -10,11 +10,12 @@ import (
 // connection to it
 func NewRedisClient(ctx context.Context, addr string) (*redis.Client, error) {
 	// ReadTimeout is 5 secs by default (3 for Dial)
-	// Ass
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     addr,
 		Password: "",
 		DB:       0,
+		// Keeping the connection open for reading
+		ReadTimeout: -1,
 	})
 	pong, err := rdb.Ping(ctx).Result()
 	// Redis fails to respond
