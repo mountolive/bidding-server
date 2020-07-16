@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 )
 
 // Struct that represents a single campaign
@@ -22,6 +23,49 @@ type Campaign struct {
 type PositionSetup struct {
 	Position int `json:"position"`
 	Distance int `json:"distance"`
+}
+
+// Routine that periodically will update related campaign's data
+// It will keep prompting the same campaigns and it would only update them
+// after one minute
+func GenerateRedisData(ctx context.Context) <-chan []Campaign {
+	// Regular chans has no "buffer" size. Meaning it blocks for reading
+	// and for writing...
+	campaignsChan := make(chan []Campaign)
+	go func() {
+		defer close(campaignsChan)
+		now := time.Now()
+		wait := false
+		var cmpgs []Campaign
+		var err error
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				fmt.Println("Retrieving redis data")
+				// If not wait, reload campaigns
+				if !wait {
+					fmt.Println("Updating redis data...")
+					cmpgs, err = LoadDefaultCampaigns()
+					if err != nil {
+						fmt.Printf("An error occurred when updating campaigns")
+						return
+					}
+					// Updating the clock
+					now = time.Now()
+				}
+				select {
+				case <-ctx.Done():
+					return
+				// First time we write, we'll trigger future waits
+				case campaignsChan <- cmpgs:
+					wait = time.Since(now).Minutes() < 1
+				}
+			}
+		}
+	}()
+	return campaignsChan
 }
 
 // Wrapper function that loads the campaigns from

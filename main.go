@@ -1,9 +1,9 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 
@@ -18,12 +18,9 @@ type response struct {
 func main() {
 	// Creating the service
 	bidder := search.Bidder{}
-	// Warmup - Loading Bid data in memory
-	campaigns, err := campaign.LoadDefaultCampaigns()
-	if err != nil {
-		// For simplicity, we'll stop the server if an error occurred in the warmup
-		log.Fatalf("An error occurred during warmup of campaign data: %v", err)
-	}
+	// Warmup - Periodic Loading Bid data in memory
+	// This generates a channel that will be consumed by each req
+	campaigns := campaign.GenerateRedisData(context.Background())
 
 	fmt.Println("Starting server: localhost:8080")
 
@@ -39,8 +36,8 @@ func main() {
 		if maxPrice == 0 {
 			w.WriteHeader(http.StatusNoContent)
 		} else {
-			w.WriteHeader(http.StatusOK)
 			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
 			json.NewEncoder(w).Encode(response{maxPrice})
 		}
 	})
@@ -48,19 +45,30 @@ func main() {
 	http.ListenAndServe(":8080", nil)
 }
 
-func processRequest(bidder search.Bidder, pos, pubId string, cmpgs []campaign.Campaign) float64 {
+func processRequest(bidder search.Bidder, pos, pubId string, cmpgs <-chan []campaign.Campaign) float64 {
 	// Asserting params - accepting only ints
 	var position int
 	var publisherId int
 	var err error
 	position, err = strconv.Atoi(pos)
+	if err != nil {
+		fmt.Println("Wrong value for value for position parameter, must be an int")
+		return 0
+	}
 	publisherId, err = strconv.Atoi(pubId)
-
 	// For simplicity, we'll cancel the lookup if the parameters are wrong
 	// and just return a 204
 	if err != nil {
+		fmt.Println("Wrong value for value for publisherid parameter, must be an int")
 		return 0
 	}
-	maxPrice := bidder.BestBid(position, publisherId, cmpgs)
+	// This releases "the lock" for the GenerateRedisData to rebuild the data
+	campaigns, ok := <-cmpgs
+	// Means channel is closed for some reason
+	if !ok {
+		fmt.Println("Something went wrong when retrieving the data from redis")
+		return 0
+	}
+	maxPrice := bidder.BestBid(position, publisherId, campaigns)
 	return maxPrice
 }

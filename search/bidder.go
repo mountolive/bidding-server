@@ -1,6 +1,9 @@
 package search
 
-import "github.com/mountolive/bidding-server/campaign"
+import (
+	"fmt"
+	"github.com/mountolive/bidding-server/campaign"
+)
 
 type Bid interface {
 	FindBestBid(p, id int, cmpgs []campaign.Campaign, candidate SearchCandidate) float64
@@ -17,23 +20,34 @@ func (b Bidder) BestBid(pos, pubId int, cmpgs []campaign.Campaign) float64 {
 // if not, maxPrice would be 0
 // We ignore any error and keep traversing (But it should be handled)
 func (b Bidder) FindBestBid(pos, pubId int, cmpgs []campaign.Campaign, candidate SearchCandidate) (maxPrice float64) {
-	if len(cmpgs) < 1 {
+	if len(cmpgs) == 0 {
 		return
 	}
-	// Constraint vars
-	var pubConst bool
-	var posConst bool
 
 	for _, cmpg := range cmpgs {
+		// Checking first if the price matches constraint
+		if maxPrice >= cmpg.Cpm {
+			continue
+		}
 		// Check if it's among the publishers (this lookup should be
 		// less expensive)
-		pubConst, _ = candidate.Candidate(pubId, cmpg.Publishers)
+		pubConst, err := candidate.Candidate(pubId, cmpg.Publishers)
+		if err != nil {
+			// Just printing the error
+			fmt.Printf("An error ocurred while trying to check publishers: %v, %v \n", cmpg.Id, err)
+			// Skipping...
+			continue
+		}
 		if pubConst {
-			posConst, _ = candidate.Candidate(pos, cmpg.Positions)
+			posConst, err := candidate.Candidate(pos, cmpg.Positions)
+			if err != nil {
+				// Just printing the error
+				fmt.Printf("An error ocurred while trying to check positions: %v, %v \n", cmpg.Id, err)
+				// Skipping
+				continue
+			}
 			if posConst {
-				if maxPrice <= cmpg.Cpm {
-					maxPrice = cmpg.Cpm
-				}
+				maxPrice = cmpg.Cpm
 			}
 		}
 	}
