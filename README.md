@@ -1,4 +1,4 @@
-# Example of a bidding server in Golang - mediasmart Mobile Tech Test
+# Example of a bidding server in Golang
 
 The bidding server is suppose to be able to lookup, according to a publisherId and a position
 the campaign with the greatest price possible.
@@ -16,4 +16,3 @@ To run the server, you can simply run the entry point, main.go
 
 This starts the server in port 8080
 
-Thanks to mediasmart's tech team for the opportunity
